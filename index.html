@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Cash Memo | Medcrew Surgicals</title>
+    <link rel="icon" type="image/png" href="img/android-chrome-192x192.png">
+    <link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600&family=Montserrat:wght@800&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ["Jost", "sans-serif"], logo: ["Montserrat", "sans-serif"] },
+                    colors: { cream: "#ffffff", ink: "#222222", sage: "#F7F7F7" }
+                }
+            }
+        };
+    </script>
+    <style>
+        html,
+        body {
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+
+        .fld {
+            width: 100%;
+            margin-top: .5rem;
+            border: 1px solid #222;
+            border-radius: .75rem;
+            background: #fff;
+            padding: .75rem 1rem;
+            font-size: 1.0625rem;
+            outline: none
+        }
+
+        .fld:focus {
+            box-shadow: 0 0 0 2px rgba(34, 34, 34, .3)
+        }
+
+        .btn {
+            border-radius: 9999px;
+            padding: .65rem 1.75rem;
+            font-size: 1.125rem;
+            font-weight: 600;
+            transition: .15s;
+            border: 1px solid #222
+        }
+
+        .btn-d {
+            background: #222;
+            color: #fff
+        }
+
+        .btn-d:hover {
+            background: rgba(0, 0, 0, .75)
+        }
+
+        .btn-l {
+            background: #fff;
+            color: #222
+        }
+
+        .btn-l:hover {
+            background: #222;
+            color: #fff
+        }
+
+        .memo {
+            border: 2px solid #222;
+            border-radius: 1rem;
+            background: #fff;
+            overflow: hidden
+        }
+
+        .memo .cell {
+            padding: .9rem 1.1rem
+        }
+
+        .memo .lbl {
+            font-size: .8125rem;
+            font-weight: 600;
+            color: rgba(34, 34, 34, .6);
+            margin-bottom: .25rem
+        }
+
+        .memo .val {
+            font-size: 1.0625rem;
+            line-height: 1.45;
+            white-space: pre-line;
+            word-break: break-word
+        }
+
+        .memo table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 1rem
+        }
+
+        .memo th,
+        .memo td {
+            border-top: 2px solid #222;
+            padding: .5rem .75rem;
+            text-align: left;
+            vertical-align: top
+        }
+
+        .memo th {
+            background: #F7F7F7;
+            font-size: .8125rem;
+            text-transform: uppercase;
+            letter-spacing: .03em
+        }
+
+        .memo .r {
+            text-align: right;
+            white-space: nowrap
+        }
+
+        .memo td.d {
+            word-break: break-word
+        }
+
+        @page {
+            size: A4 portrait;
+            margin: 0
+        }
+
+        @media print {
+
+            html,
+            body {
+                height: auto !important;
+                overflow: visible !important;
+                background: #fff !important;
+                animation: none !important;
+            }
+
+            body>*:not(main) {
+                display: none !important;
+            }
+
+            nav,
+            #hdr,
+            #ftr {
+                display: none !important;
+            }
+
+            main>*:not(#memoWrap) {
+                display: none !important;
+            }
+
+            main {
+                max-width: none !important;
+                margin: 0 !important;
+                padding: 10mm !important;
+            }
+
+            #memoWrap {
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            .memo {
+                border-radius: 0;
+                break-inside: avoid;
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-white font-sans text-ink">
+    <div id="hdr"></div>
+
+    <main class="mx-auto max-w-4xl px-5 py-10 lg:py-16">
+        <h1 class="text-3xl font-semibold sm:text-4xl">Cash memo</h1>
+        <p class="mt-3 text-lg text-ink/70">For customers who take goods without a GST bill. Fill the items, check the
+            preview, press Print memo. For Medcrew team use only.</p>
+
+        <form id="f" class="mt-8 grid gap-6 rounded-2xl border border-ink bg-white p-6 sm:p-8" novalidate>
+            <div class="grid gap-6 sm:grid-cols-2">
+                <div><label for="name" class="font-semibold">Customer name / hospital *</label><input id="name"
+                        class="fld" type="text" autocomplete="off" placeholder="e.g. Dr. Anita Singh, City Hospital">
+                </div>
+                <div><label for="phone" class="font-semibold">Customer phone</label><input id="phone" class="fld"
+                        type="tel" inputmode="tel" autocomplete="off" placeholder="10 digit number"></div>
+            </div>
+            <div><label for="addr" class="font-semibold">Customer address (optional)</label><textarea id="addr" rows="2"
+                    class="fld" placeholder="Area, city"></textarea></div>
+
+            <div>
+                <p class="font-semibold">Items *</p>
+                <div id="rows" class="mt-2 grid gap-3"></div>
+                <button id="addRow" type="button" class="btn btn-l mt-4 !py-2 !text-[15px]">+ Add item</button>
+            </div>
+
+            <div class="grid gap-6 sm:grid-cols-2">
+                <div><label for="disc" class="font-semibold">Discount (Rs)</label><input id="disc" class="fld"
+                        type="number" min="0" inputmode="decimal" placeholder="0"></div>
+                <div><label for="cour" class="font-semibold">Courier charge (Rs)</label><input id="cour" class="fld"
+                        type="number" min="0" inputmode="decimal" placeholder="0"></div>
+                <div><label for="pay" class="font-semibold">Payment</label>
+                    <select id="pay" class="fld">
+                        <option>Cash</option>
+                        <option>UPI</option>
+                        <option>Bank transfer</option>
+                        <option>Pending (credit)</option>
+                    </select>
+                </div>
+                <div><label for="paid" class="font-semibold">Amount received (Rs)</label><input id="paid" class="fld"
+                        type="number" min="0" inputmode="decimal" placeholder="Full amount"></div>
+            </div>
+            <div><label for="upi" class="font-semibold">UPI ID</label><input id="upi" class="fld" type="text"
+                    autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="e.g. medcrew@okaxis"></div>
+            <div><label for="note" class="font-semibold">Note (optional)</label><input id="note" class="fld" type="text"
+                    autocomplete="off" placeholder="e.g. Delivery by courier, advance taken"></div>
+
+            <div class="flex flex-wrap items-center gap-3">
+                <button id="print" type="button" class="btn btn-d">Print memo</button>
+                <button id="wa" type="button" class="btn btn-l">Send on WhatsApp</button>
+                <button id="clear" type="button" class="btn btn-l">New memo</button>
+                <p id="err" class="text-[15px] text-red-700" role="alert"></p>
+            </div>
+        </form>
+
+        <h2 class="mt-10 text-2xl font-semibold">Preview</h2>
+        <div id="memoWrap" class="mt-4">
+            <div class="memo">
+                <div class="flex items-center justify-between gap-3 border-b-2 border-ink bg-sage px-5 py-3">
+                    <p class="font-logo text-xl font-extrabold uppercase tracking-tight">Medcrew Surgicals</p>
+                    <p class="text-[15px] font-semibold uppercase tracking-wide">Cash Memo</p>
+                </div>
+                <div class="grid grid-cols-2 border-b-0">
+                    <div class="cell">
+                        <p class="lbl">Memo no.</p>
+                        <p class="val"><strong id="mNo">-</strong></p>
+                    </div>
+                    <div class="cell text-right">
+                        <p class="lbl">Date</p>
+                        <p class="val"><strong id="mDate"></strong></p>
+                    </div>
+                </div>
+                <div class="grid border-t-2 border-ink sm:grid-cols-2">
+                    <div class="cell border-b-2 border-ink sm:border-b-0 sm:border-r-2">
+                        <p class="lbl">From</p>
+                        <p class="val"><strong>Medcrew Surgicals</strong>
+                            4th Floor, B-49, Flat No 10, Gali No 14/2, Wazirabad
+                            New Delhi - 110084
+                            Phone: +91 78000 94141</p>
+                    </div>
+                    <div class="cell">
+                        <p class="lbl">To</p>
+                        <p class="val"><strong id="mName">Customer name</strong>
+                            <span id="mAddr"></span>
+                            <span id="mPhone"></span>
+                        </p>
+                    </div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width:2.5rem">#</th>
+                            <th>Item</th>
+                            <th class="r">Qty</th>
+                            <th class="r">Rate</th>
+                            <th class="r">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody id="mRows"></tbody>
+                </table>
+                <div class="grid border-t-2 border-ink sm:grid-cols-2">
+                    <div class="cell border-b-2 border-ink sm:border-b-0 sm:border-r-2">
+                        <p class="lbl">Amount in words</p>
+                        <p class="val" id="mWords">-</p>
+                        <p class="val mt-2 text-[15px]" id="mNote"></p>
+                    </div>
+                    <div class="cell">
+                        <div class="flex justify-between"><span>Subtotal</span><span id="mSub">Rs 0</span></div>
+                        <div class="flex justify-between" id="mDiscRow"><span>Discount</span><span id="mDisc">Rs
+                                0</span></div>
+                        <div class="flex justify-between" id="mCourRow"><span>Courier charge</span><span id="mCour">Rs
+                                0</span></div>
+                        <div class="flex justify-between border-t border-ink pt-1 text-xl font-semibold">
+                            <span>Total</span><span id="mTot">Rs 0</span></div>
+                        <div class="mt-1 flex justify-between text-[15px]"><span id="mPay">Cash</span><span
+                                id="mBal"></span></div>
+                    </div>
+                </div>
+                <div id="mUpi" class="flex items-center gap-4 border-t-2 border-ink px-5 py-3" style="display:none">
+                    <div id="qr" class="shrink-0 bg-white p-1" style="width:116px;height:116px"></div>
+                    <div class="text-[15px]">
+                        <p class="font-semibold">Scan to pay with any UPI app</p>
+                        <p class="text-xl font-semibold" id="uAmt"></p>
+                        <p class="text-ink/70" id="uId"></p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3 border-t-2 border-ink px-5 pb-3 pt-8 text-[15px]">
+                    <p>Customer signature</p>
+                    <p class="text-right">For Medcrew Surgicals</p>
+                </div>
+                <div class="border-t-2 border-ink bg-sage px-5 py-2 text-center text-[13px] font-medium">
+                    Cash memo (not a GST tax invoice). Thank you for choosing Medcrew Surgicals.
+                </div>
+            </div>
+        </div>
+
+        <section class="mt-10">
+            <div class="flex items-center justify-between gap-4">
+                <h2 class="text-2xl font-semibold">Recent memos</h2>
+                <button id="clearAll" type="button" class="text-[15px] underline hover:no-underline">Clear list</button>
+            </div>
+            <p class="mt-1 text-[15px] text-ink/60">Saved only in this browser, on this device. Memos are saved when you
+                print or send.</p>
+            <ul id="recent" class="mt-4 space-y-3"></ul>
+        </section>
+    </main>
+
+    <div id="ftr"></div>
+    <script src="js/main.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+    <script>
+        const UPI_KEY = 'mc_upi';
+        const getUpi = () => { const v = $('upi').value.trim(); return /^[\w.\-]{2,}@[A-Za-z][A-Za-z0-9.\-]{1,}$/.test(v) ? v : ''; };
+        const UPI_NAME = 'Medcrew Surgicals';
+        const $ = i => document.getElementById(i);
+        const KEY = 'mc_memos', CNT = 'mc_memo_counter';
+        const load = () => { try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch (e) { return []; } };
+        const save = l => { try { localStorage.setItem(KEY, JSON.stringify(l.slice(0, 30))); } catch (e) { } };
+        const inr = n => 'Rs ' + (Math.round(n * 100) / 100).toLocaleString('en-IN');
+        const num = v => parseFloat(v) || 0;
+        const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+        const today = () => new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+
+        /* memo number: MC-DDMMYY, date only */
+        function nextNo(commit) {
+            const d = new Date(), p = String(d.getDate()).padStart(2, '0') + String(d.getMonth() + 1).padStart(2, '0') + String(d.getFullYear()).slice(2);
+            return 'MC-' + p;
+        }
+
+        let current = null; /* memo being edited (null = new) */
+        let memoNo = nextNo(false), memoDate = today();
+
+        function toWords(n) {
+            n = Math.round(n);
+            if (!n) return 'Zero';
+            const a = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+            const b = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+            const two = x => x < 20 ? a[x] : b[Math.floor(x / 10)] + (x % 10 ? ' ' + a[x % 10] : '');
+            const three = x => (x >= 100 ? a[Math.floor(x / 100)] + ' Hundred' + (x % 100 ? ' ' : '') : '') + (x % 100 ? two(x % 100) : '');
+            const parts = [];
+            const cr = Math.floor(n / 1e7), la = Math.floor(n / 1e5) % 100, th = Math.floor(n / 1e3) % 100, rest = n % 1000;
+            if (cr) parts.push(three(cr) + ' Crore');
+            if (la) parts.push(two(la) + ' Lakh');
+            if (th) parts.push(two(th) + ' Thousand');
+            if (rest) parts.push(three(rest));
+            return parts.join(' ');
+        }
+
+        function addRow(d) {
+            d = d || {};
+            const r = document.createElement('div');
+            r.className = 'row grid grid-cols-[1fr_4.5rem_6rem_auto] items-center gap-2 sm:grid-cols-[1fr_6rem_8rem_auto]';
+            r.innerHTML = '<input class="fld !mt-0 it" placeholder="Item e.g. Skin Stapler" autocomplete="off" value="' + esc(d.item || '') + '">' +
+                '<input class="fld !mt-0 qt" type="number" min="0" inputmode="decimal" placeholder="Qty" value="' + esc(d.qty || '') + '">' +
+                '<input class="fld !mt-0 rt" type="number" min="0" inputmode="decimal" placeholder="Rate" value="' + esc(d.rate || '') + '">' +
+                '<button type="button" class="rm px-2 text-2xl leading-none" aria-label="Remove item">&times;</button>';
+            r.querySelector('.rm').onclick = () => { if ($('rows').children.length > 1) { r.remove(); update(); } };
+            r.querySelectorAll('input').forEach(i => i.addEventListener('input', update));
+            $('rows').appendChild(r);
+        }
+        const items = () => [...$('rows').children].map(r => ({
+            item: r.querySelector('.it').value.trim(), qty: r.querySelector('.qt').value, rate: r.querySelector('.rt').value
+        })).filter(x => x.item || x.qty || x.rate);
+
+        function totals() {
+            const its = items(), sub = its.reduce((s, x) => s + num(x.qty) * num(x.rate), 0);
+            const disc = Math.min(num($('disc').value), sub), courier = num($('cour').value), tot = sub - disc + courier;
+            const paidRaw = $('paid').value, pending = $('pay').value.startsWith('Pending');
+            const paid = paidRaw === '' ? (pending ? 0 : tot) : num(paidRaw);
+            return { its, sub, disc, courier, tot, paid, bal: tot - paid };
+        }
+
+        function update() {
+            const t = totals(), v = i => $(i).value.trim();
+            $('mNo').textContent = memoNo; $('mDate').textContent = memoDate;
+            $('mName').textContent = v('name') || 'Customer name';
+            $('mAddr').textContent = v('addr');
+            $('mPhone').textContent = v('phone') ? 'Phone: +91 ' + v('phone').replace(/\D/g, '').slice(-10) : '';
+            $('mRows').innerHTML = t.its.length ? t.its.map((x, i) =>
+                '<tr><td>' + (i + 1) + '</td><td class="d">' + esc(x.item || '-') + '</td><td class="r">' + esc(x.qty || '-') +
+                '</td><td class="r">' + inr(num(x.rate)) + '</td><td class="r">' + inr(num(x.qty) * num(x.rate)) + '</td></tr>').join('')
+                : '<tr><td colspan="5" class="text-center" style="color:rgba(34,34,34,.6)">No items yet</td></tr>';
+            $('mSub').textContent = inr(t.sub);
+            $('mDisc').textContent = '- ' + inr(t.disc);
+            $('mDiscRow').style.display = t.disc ? '' : 'none';
+            $('mCour').textContent = '+ ' + inr(t.courier);
+            $('mCourRow').style.display = t.courier ? '' : 'none';
+            $('mTot').textContent = inr(t.tot);
+            $('mWords').textContent = t.tot ? 'Rupees ' + toWords(t.tot) + ' only' : '-';
+            $('mNote').textContent = v('note');
+            /* UPI QR: amount = balance due (or full total when payment mode is UPI) */
+            const amt = t.bal > 0.009 ? t.bal : ($('pay').value === 'UPI' ? t.tot : 0);
+            const box = $('mUpi'), UPI_ID = getUpi();
+            if (UPI_ID && typeof QRCode !== 'undefined' && amt > 0) {
+                const link = 'upi://pay?pa=' + UPI_ID + '&pn=' + encodeURIComponent(UPI_NAME) +
+                    '&am=' + (Math.round(amt * 100) / 100).toFixed(2) + '&cu=INR&tn=' + encodeURIComponent('Memo ' + memoNo);
+                if (box.dataset.l !== link) {
+                    box.dataset.l = link; $('qr').innerHTML = '';
+                    new QRCode($('qr'), { text: link, width: 108, height: 108, correctLevel: QRCode.CorrectLevel.M });
+                }
+                $('uAmt').textContent = inr(amt); $('uId').textContent = 'UPI: ' + UPI_ID;
+                box.style.display = '';
+            } else box.style.display = 'none';
+            $('mPay').textContent = 'Paid by ' + $('pay').value;
+            $('mBal').textContent = t.bal > 0.009 ? 'Balance due: ' + inr(t.bal) : 'Paid in full';
+        }
+
+        function snapshot() {
+            const t = totals(), v = i => $(i).value.trim();
+            if (!current) current = Date.now().toString(36);
+            return {
+                id: current, no: memoNo, date: memoDate, name: v('name'), phone: v('phone'), addr: v('addr'), items: t.its, disc: $('disc').value, cour: $('cour').value,
+                pay: $('pay').value, paid: $('paid').value, note: v('note'), total: t.tot
+            };
+        }
+        function validate() {
+            const err = $('err'); err.textContent = '';
+            const t = totals(), digits = $('phone').value.replace(/\D/g, '');
+            if (!$('name').value.trim()) return err.textContent = 'Please enter customer name.', false;
+            if (!t.its.length || t.its.some(x => !x.item || num(x.qty) <= 0 || num(x.rate) <= 0)) return err.textContent = 'Each item needs name, quantity and rate.', false;
+            if ($('phone').value && (digits.length < 10 || digits.length > 13)) return err.textContent = 'Please enter a valid phone number or leave it empty.', false;
+            return true;
+        }
+        function commit() {
+            const s = snapshot(), l = load().filter(x => (x.id || x.no) !== s.id);
+            l.unshift(s); save(l); render();
+        }
+
+        function render() {
+            const ul = $('recent'), list = load(); ul.innerHTML = '';
+            if (!list.length) { ul.innerHTML = '<li class="text-[15px] text-ink/60">Nothing yet.</li>'; return; }
+            list.forEach(d => {
+                const li = document.createElement('li');
+                li.className = 'flex flex-wrap items-center justify-between gap-3 rounded-xl border border-ink p-4';
+                li.innerHTML = '<div><p class="font-semibold">' + esc(d.name) + ' &middot; ' + inr(d.total) + '</p><p class="text-[15px] text-ink/70">' + esc(d.no) + ' &middot; ' + esc(d.date) + '</p></div>';
+                const act = document.createElement('div'); act.className = 'flex gap-2';
+                const open = document.createElement('button'); open.type = 'button'; open.textContent = 'Open';
+                open.className = 'rounded-full border border-ink px-4 py-1.5 transition hover:bg-ink hover:text-white';
+                open.onclick = () => { fill(d); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+                const del = document.createElement('button'); del.type = 'button'; del.textContent = 'Remove';
+                del.className = 'rounded-full px-4 py-1.5 underline hover:no-underline';
+                del.onclick = () => { save(load().filter(x => (x.id || x.no) !== (d.id || d.no))); render(); };
+                act.append(open, del); li.append(act); ul.append(li);
+            });
+        }
+        function fill(d) {
+            $('name').value = d.name; $('phone').value = d.phone; $('addr').value = d.addr; $('disc').value = d.disc; $('cour').value = d.cour || '';
+            $('pay').value = d.pay; $('paid').value = d.paid; $('note').value = d.note;
+            $('rows').innerHTML = ''; (d.items.length ? d.items : [{}]).forEach(addRow);
+            memoNo = d.no; memoDate = d.date; current = d.id || d.no; update();
+        }
+        function reset() {
+            $('f').reset(); loadUpi(); $('rows').innerHTML = ''; addRow(); $('err').textContent = '';
+            current = null; memoNo = nextNo(false); memoDate = today(); update();
+        }
+
+        $('addRow').onclick = () => addRow();
+        ['name', 'phone', 'addr', 'disc', 'cour', 'upi', 'pay', 'paid', 'note'].forEach(i => { $(i).addEventListener('input', update); $(i).addEventListener('change', update); });
+        const TITLE = document.title;
+        $('print').onclick = () => {
+            if (!validate()) return; update(); commit();
+            /* browser uses the page title as the default PDF file name */
+            const clean = x => x.replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim();
+            document.title = clean('Cash Memo - ' + $('name').value + ' - ' + memoNo);
+            window.print();
+        };
+        window.addEventListener('afterprint', () => { document.title = TITLE; });
+        $('clear').onclick = reset;
+        $('clearAll').onclick = () => { save([]); render(); };
+        $('wa').onclick = () => {
+            if (!validate()) return;
+            const t = totals(), lines = ['*Medcrew Surgicals - Cash Memo*', 'Memo: ' + memoNo + ' | ' + memoDate, '',
+                ...t.its.map((x, i) => (i + 1) + '. ' + x.item + ' x ' + x.qty + ' = ' + inr(num(x.qty) * num(x.rate))), ''];
+            if (t.disc) lines.push('Discount: ' + inr(t.disc));
+            if (t.courier) lines.push('Courier charge: ' + inr(t.courier));
+            lines.push('*Total: ' + inr(t.tot) + '*', t.bal > 0.009 ? 'Balance due: ' + inr(t.bal) : 'Paid in full (' + $('pay').value + ')', '', 'Thank you for choosing Medcrew Surgicals. Help: +91 78000 94141');
+            let n = $('phone').value.replace(/\D/g, ''); if (n.length === 10) n = '91' + n;
+            commit();
+            window.open('https://wa.me/' + n + '?text=' + encodeURIComponent(lines.join('\n')), '_blank', 'noopener');
+        };
+
+        function loadUpi() { try { $('upi').value = localStorage.getItem(UPI_KEY) || ''; } catch (e) { } }
+        $('upi').addEventListener('input', () => { try { localStorage.setItem(UPI_KEY, $('upi').value.trim()); } catch (e) { } });
+        loadUpi(); addRow(); update(); render();
+    </script>
+</body>
+
+</html>
